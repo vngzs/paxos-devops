@@ -1,0 +1,28 @@
+version: '3.4'
+services:
+  web:
+    restart: 'on-failure'
+    build: .
+    ports:
+    - "5000:5000"
+    volumes:
+    - type: volume
+      source: db01
+      target: /srv
+      volume:
+        nocopy: true
+    - type: bind
+      source: /sys/fs/cgroup
+      target: /host/sys/fs/cgroup:ro
+    - type: bind
+      source: ./
+      target: /code
+
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "200k"
+        max-file: "3"
+volumes:
+  db01:
