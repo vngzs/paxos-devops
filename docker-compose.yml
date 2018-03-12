@@ -14,11 +14,6 @@ services:
     - type: bind
       source: /sys/fs/cgroup
       target: /host/sys/fs/cgroup:ro
-    - type: bind
-      source: ./
-      target: /code
-
-
     logging:
       driver: json-file
       options:
