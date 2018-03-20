@@ -16,6 +16,7 @@ from sanic.response import json
 from sanic.response import file
 
 import aiofiles
+from aiofiles import os as async_os
 
 app = Sanic('sha256py')
 
@@ -56,7 +57,8 @@ class DirHashMap(object):
         executor = ProcessPoolExecutor(max_workers=3)
         result = await self.loop.run_in_executor(None, sha256_encode, item)
         logger.info('adding %s -> %s', str(result), str(item))
-        if not result in self:
+        contains = await self.__contains__(result)
+        if not contains:
             directory = self.root / Path(result[:2])
             path = directory / Path(result)
             await self.loop.run_in_executor(None, mkdir_to_path, directory, path)
@@ -74,13 +76,13 @@ class DirHashMap(object):
             raise ArgumentError('bad path')
         return await file(path)
 
-    def __contains__(self, key):
+    async def __contains__(self, key):
         if len(key) != 64:
             return False
         path = self.root / Path(key[:2]) / Path(key)
         if not self.root in path.parents:
             raise ArgumentError('bad path')
-        return path.is_file()
+        return await self.loop.run_in_executor(None, path.is_file)
 
     def __delitem__(self, key):
         if len(key) != 64:
@@ -124,7 +126,8 @@ async def delete(request, digest):
     Convenience function for when this is run with persistent docker volumes,
     such that test messages may be automatically deleted.
     """
-    if not digest in hashmap:
+    contains = await hashmap.__contains__(digest)
+    if not contains:
         return json({"err_message": "Message not found"}, status=404)
     else:
         del hashmap[digest]
@@ -133,7 +136,8 @@ async def delete(request, digest):
 
 @app.route("/messages/<digest>", methods=["GET"])
 async def retrieve_message(request, digest):
-    if not digest in hashmap:
+    contains = await hashmap.__contains__(digest)
+    if not contains:
         error_logger.error('digest %s not found', str(digest))
         return json({"err_message": "Message not found"}, status=404)
     else:

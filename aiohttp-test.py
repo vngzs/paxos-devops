@@ -12,6 +12,23 @@ import multiprocessing as mp
 import aiohttp
 
 
+async def post_message(session, url, message):
+    async with session.post(url, json={'message': message}) as resp:
+        assert resp.status == 201 or resp.status == 200
+        return await resp.text()
+
+
+async def get_shaurl(session, shaurl):
+    async with session.get(shaurl) as resp:
+        assert resp.status == 200
+        return await resp.text()
+
+
+async def delete_shaurl(session, shaurl):
+    async with session.delete(shaurl) as resp:
+        return await resp.text()
+
+
 async def aio(messages, procnum, avg_dict, count_dict):
     url = 'https://localhost:5000/messages'
     conn = aiohttp.TCPConnector(verify_ssl=False)
@@ -22,18 +39,13 @@ async def aio(messages, procnum, avg_dict, count_dict):
         start = time.perf_counter()
         for i in range(len(messages)):
             message = messages[i]
-            async with session.post(url, json={'message': message}) as resp:
-                assert resp.status == 201 or resp.status == 200
-                text = await resp.text()
-                sha = json.loads(text)["digest"]
-                shaurl = "{}/{}".format(url, sha)
+            text = await post_message(session, url, message)
+            sha = json.loads(text)["digest"]
+            shaurl = "{}/{}".format(url, sha)
             count_dict[procnum] += 1
-            async with session.get(shaurl) as resp:
-                assert resp.status == 200
-                text = await resp.text()
+            await get_shaurl(session, shaurl)
             count_dict[procnum] += 1
-            async with session.delete(shaurl) as resp:
-                text = await resp.text()
+            await delete_shaurl(session, shaurl)
             count_dict[procnum] += 1
         end = time.perf_counter()
         elapsed = (time.perf_counter() - start)
