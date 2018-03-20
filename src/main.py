@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
+import asyncio
 import hashlib
 import ssl
 import sys
 import os
 import signal
 from pathlib import Path
+import logging
 from json import dumps
+from concurrent.futures import ProcessPoolExecutor
 
 from sanic import Sanic
 from sanic.response import json
@@ -18,6 +21,24 @@ app = Sanic('sha256py')
 
 context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
 context.load_cert_chain("/cert.pem", keyfile="/key.pem")
+
+logger = logging.getLogger('root')
+error_logger = logging.getLogger('sanic.error')
+access_logger = logging.getLogger('sanic.access')
+
+def sha256_encode(message):
+    b = message
+    if not type(b) == bytes:
+        b = message.encode('utf-8')
+    m = hashlib.sha256()
+    m.update(b)
+    return m.hexdigest()
+
+
+def mkdir_to_path(directory, path):
+    directory.mkdir(exist_ok=True)
+    logger.info("creating path: %s", str(path))
+    path.touch()
 
 
 class DirHashMap(object):
@@ -32,18 +53,13 @@ class DirHashMap(object):
             item: will be sha256 encoded and stored on the filesystem at
                   root / sha256(item)[:2] / sha256(item).
         """
-        m = hashlib.sha256()
-        b = item
-        if not type(b) == bytes:
-            b = item.encode('utf-8')
-        m.update(b)
-        result = m.hexdigest()
-        print('adding {} -> {}'.format(result, item))
+        executor = ProcessPoolExecutor(max_workers=3)
+        result = await self.loop.run_in_executor(None, sha256_encode, item)
+        logger.info('adding %s -> %s', str(result), str(item))
         if not result in self:
             directory = self.root / Path(result[:2])
-            directory.mkdir(exist_ok=True)
             path = directory / Path(result)
-            path.touch()
+            await self.loop.run_in_executor(None, mkdir_to_path, directory, path)
             async with aiofiles.open(path, mode='w') as f:
                 await f.write(dumps({"message": item}))
             return {"digest": result, "updated": True}
@@ -90,14 +106,14 @@ def init(sanic, loop):
 
 @app.route("/messages", methods=["POST"])
 async def send_message(request):
-    print('sending message: {}'.format(request.json['message']))
+    logger.info('sending message: %s', str(request.json['message']))
     result = await hashmap.add(request.json['message'])
-    print(request.json['message'], ' -> ', result['digest'])
+    logger.info('%s %s %s', str(request.json['message']), ' -> ', str(result['digest']))
     if result['updated']:
-        print('returning 201', result['digest'])
+        logger.info('returning 201: %s', str(result['digest']))
         return json({"digest": result['digest']}, status=201)
     else:
-        print('returning 200', result['digest'])
+        logger.info('returning 200: %s', str(result['digest']))
         return json({"digest": result['digest']}, status=200)
 
 
@@ -118,7 +134,7 @@ async def delete(request, digest):
 @app.route("/messages/<digest>", methods=["GET"])
 async def retrieve_message(request, digest):
     if not digest in hashmap:
-        print('digest {} not found'.format(digest))
+        error_logger.error('digest %s not found', str(digest))
         return json({"err_message": "Message not found"}, status=404)
     else:
         return await hashmap[digest]
