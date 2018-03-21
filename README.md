@@ -148,6 +148,16 @@ $ ./scripts/clean.py --domain localhost --port 5000 --cert-path ./localhost.crt
 {u'message_deleted': u'fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9'}
 ```
 
+## Design
+
+This uses [sanic](https://github.com/channelcat/sanic) inside a single Docker
+container with a single persistent volume (to handle service restarts
+gracefully).
+
+This was my first, albeit small, project using
+[`asyncio`](https://docs.python.org/3/library/asyncio.html),
+so I might have gotten some of the details wrong.
+
 ## Scaling
 
 See [`scaling.md`](./docs/scaling.md)
