@@ -104,6 +104,31 @@ This gives us high availability (by running multiple application servers
 behind a load balancer) and scalability in our persistent storage (we can add
 more Cassandra nodes to handle a higher workload).
 
+#### Other options
+
+We could use another database for persistent storage, but I picked Cassandra
+because of its scalability, row-level atomic updates, and ease of use.
+
+Using Amazon S3 for persistence is another option. While S3 is eventually
+consistent in general, it provides read-after-write consistency. Since it is
+extremely unlikely we will ever encounter a sha256 collision over the course of
+our application's lifetime, and DELETE requests are not in the original spec
+(though I implemented them for testing purposes), this is good enough for our
+use case.
+
+However, if we end up with a GET-heavy workload, Amazon might
+[rate limit our application](https://docs.aws.amazon.com/AmazonS3/latest/dev/request-rate-perf-considerations.html).
+In this case, again given that we do not support updates or deletes, we could
+run
+[CloudFront over S3](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/MigrateS3ToCloudFront.html)
+to manage a GET-heavy workload. We could remake this service using S3 for
+persistent storage relatively quickly - it would probably not be much more
+code implemented using S3.
+
+The other benefit of S3 would be its streaming capabilities. Rather than
+reading entire files into our application servers before returning them to our
+clients, we could stream (large) files back piece-by-piece.
+
 #### Performance bounds
 
 Since we are offloading our I/O to Cassandra and mostly serving and storing
