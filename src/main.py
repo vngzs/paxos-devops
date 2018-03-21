@@ -21,7 +21,10 @@ from aiofiles import os as async_os
 app = Sanic('sha256py')
 
 context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
-context.load_cert_chain("/cert.pem", keyfile="/key.pem")
+if len(sys.argv) > 1:
+    context.load_cert_chain(sys.argv[1], keyfile=sys.argv[2])
+else:
+    context.load_cert_chain("/cert.pem", keyfile="/key.pem")
 
 logger = logging.getLogger('root')
 error_logger = logging.getLogger('sanic.error')
