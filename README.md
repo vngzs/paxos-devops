@@ -135,10 +135,20 @@ All tests passed!
 ### Cleaning up
 
 The docker container persists data to a volume (so that it works when
-restarted). For convenience, a 
+restarted).
+
+#### Delete endpoint
+
+A delete endpoint has been added to facilitate easy cleanup. It is enabled by
+default.
+
+For convenience, a cleaning
 [script](./scripts/clean.py)
-has been provided to undo the changes
-invoked by the test runner. With the container running, do:
+has been provided to undo the changes invoked by the test runner.
+It only works if the `-d` (`--no-delete`) argument is not passed to the script.
+By default, the delete endpoint is enabled.
+
+With the container running, do:
 
 ```console
 $ ./scripts/clean.py --domain localhost --port 5000 --cert-path ./localhost.crt

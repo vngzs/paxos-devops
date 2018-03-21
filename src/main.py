@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import hashlib
 from json import dumps
 import logging
@@ -15,12 +16,6 @@ from sanic import Sanic
 
 
 app = Sanic('sha256py')
-
-context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
-if len(sys.argv) > 1:
-    context.load_cert_chain(sys.argv[1], keyfile=sys.argv[2])
-else:
-    context.load_cert_chain("/cert.pem", keyfile="/key.pem")
 
 logger = logging.getLogger('root')
 error_logger = logging.getLogger('sanic.error')
@@ -48,9 +43,9 @@ def unlink(path):
 
 
 class DirHashMap(object):
-    def __init__(self, loop=None, root='/srv'):
+    def __init__(self, loop=None, root=None):
         self.loop = loop
-        self.root = Path(root)
+        self.root = root
 
     async def add(self, item):
         """Insert item into the DirHashMap
@@ -102,12 +97,14 @@ class DirHashMap(object):
 
 
 hashmap = None
+root = None
 
 
 @app.listener('before_server_start')
-def init(sanic, loop):
+async def init(sanic, loop):
     global hashmap
-    hashmap = DirHashMap(loop=loop)
+    global root
+    hashmap = DirHashMap(loop=loop, root=root)
 
 
 @app.route("/messages", methods=["POST"])
@@ -124,21 +121,6 @@ async def send_message(request):
         return json({"digest": result['digest']}, status=200)
 
 
-@app.route("/messages/<digest>", methods=["DELETE"])
-async def delete(request, digest):
-    """Delete a message at digest.
-
-    Convenience function for when this is run with persistent docker volumes,
-    such that test messages may be automatically deleted.
-    """
-    contains = await hashmap.contains(digest)
-    if not contains:
-        return json({"err_message": "Message not found"}, status=404)
-    else:
-        await hashmap.delitem(digest)
-        return json({"message_deleted": digest})
-
-
 @app.route("/messages/<digest>", methods=["GET"])
 async def retrieve_message(request, digest):
     contains = await hashmap.contains(digest)
@@ -150,7 +132,41 @@ async def retrieve_message(request, digest):
 
 
 def main():
-    app.run(host="0.0.0.0", port=5000, ssl=context, workers=20)
+    parser = argparse.ArgumentParser('{}'.format(sys.argv[0]))
+    parser.add_argument('-c', '--certificate', type=str, default='/cert.pem',
+                        help='certificate file')
+    parser.add_argument('-k', '--key', type=str, default='/key.pem',
+                        help='key file')
+    parser.add_argument('-d', '--no-delete', action='store_false', default=False,
+                        help='enable the delete endpoint')
+    parser.add_argument('-p', '--port', type=int, default='5000',
+                        help='port to listen on')
+    parser.add_argument('-r', '--root', type=str, default='/srv',
+                        help='root directory for files')
+    args = parser.parse_args()
+
+    global root
+    root = Path(args.root)
+
+    if not args.no_delete:
+        @app.route("/messages/<digest>", methods=["DELETE"])
+        async def delete(request, digest):
+            """Delete a message at digest.
+
+            Convenience function for when this is run with persistent docker volumes,
+            such that test messages may be automatically deleted.
+            """
+            contains = await hashmap.contains(digest)
+            if not contains:
+                return json({"err_message": "Message not found"}, status=404)
+            else:
+                await hashmap.delitem(digest)
+                return json({"message_deleted": digest})
+
+    context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(args.certificate, keyfile=args.key)
+
+    app.run(host="0.0.0.0", port=args.port, ssl=context, workers=20)
 
 
 if __name__ == "__main__":

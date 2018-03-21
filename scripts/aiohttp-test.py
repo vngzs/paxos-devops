@@ -29,8 +29,8 @@ async def delete_shaurl(session, shaurl):
         return await resp.text()
 
 
-async def aio(messages, procnum, avg_dict, count_dict):
-    url = 'https://localhost:5000/messages'
+async def aio(messages, procnum, avg_dict, count_dict, hostname_and_port):
+    url = 'https://{}:{}/messages'.format(*hostname_and_port)
     conn = aiohttp.TCPConnector(verify_ssl=False)
     count_dict[procnum] = 0
     async with aiohttp.ClientSession(connector=conn) as session:
@@ -53,9 +53,9 @@ async def aio(messages, procnum, avg_dict, count_dict):
         print('avg reqs/sec for thread {}: {}'.format(procnum, avg))
         avg_dict[procnum] = avg
 
-def start_asyncio_processing(messages, procnum, avg_dict, count_dict):
+def start_asyncio_processing(messages, procnum, avg_dict, count_dict, hostname_and_port):
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(aio(messages, procnum, avg_dict, count_dict))
+    loop.run_until_complete(aio(messages, procnum, avg_dict, count_dict, hostname_and_port))
 
 def get_n_messages_length_k(n, k):
     return [''.join(random.choices(string.ascii_uppercase + string.digits, k=k))
@@ -66,6 +66,8 @@ def main():
     parser.add_argument('-t', '--threads', type=int, default=1)
     parser.add_argument('-c', '--count', type=int, default=1)
     parser.add_argument('-N', '--length', type=int, default=10)
+    parser.add_argument('-n', '--hostname', type=str, default='localhost')
+    parser.add_argument('-p', '--port', type=int, default=5000)
     args = parser.parse_args()
     manager = mp.Manager()
     avg_dict = manager.dict()
@@ -76,7 +78,8 @@ def main():
     for i in range(args.threads):
         messages_by_thread[i] = get_n_messages_length_k(args.count, args.length)
     for i in range(args.threads):
-        p = mp.Process(target=start_asyncio_processing, args=(messages_by_thread[i], i, avg_dict, count_dict))
+        hostname_and_port = (args.hostname, args.port)
+        p = mp.Process(target=start_asyncio_processing, args=(messages_by_thread[i], i, avg_dict, count_dict, hostname_and_port))
         jobs.append(p)
         processes.append(p)
     start = time.perf_counter()
