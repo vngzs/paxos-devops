@@ -156,7 +156,7 @@ $ ./scripts/clean.py --domain localhost --port 5000 --cert-path ./localhost.crt
 
 ## Design
 
-This uses [sanic](https://github.com/channelcat/sanic) inside a single Docker
+This uses [Sanic](https://github.com/channelcat/sanic) inside a single Docker
 container with a single persistent volume (to handle service restarts
 gracefully).
 
