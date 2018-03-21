@@ -8,7 +8,6 @@ service.
 ## Contents
 
 1. [Requirements](./docs/requirements.md#requirements)
-   1. [Optional dependencies](./docs/requirements.md#optional-dependencies)
 1. [ReST API](#rest-api)
 1. [Building and running the image](#building-and-running-the-image)
 1. [Stopping the image](#stopping-the-image)
@@ -18,6 +17,7 @@ service.
    1. [Waiting for the container to start](#waiting-for-the-container-to-start)
    1. [Cleaning up](#cleaning-up)
       1. [Delete endpoint](#delete-endpoint)
+1. [Design](#design)
 1. [Scaling](./docs/scaling.md#scaling)
 
 ## Requirements
@@ -159,6 +159,12 @@ $ ./scripts/clean.py --domain localhost --port 5000 --cert-path ./localhost.crt
 This uses [Sanic](https://github.com/channelcat/sanic) inside a single Docker
 container with a single persistent volume (to handle service restarts
 gracefully).
+
+Since the problem statement makes many references to "[a] docker container",
+I simply created a single container web service to solve the problem. It only
+runs one process, and I did not want to break the Docker paradigm by running
+a service monitor inside the container, so it uses the filesystem to store
+data.
 
 This was my first, albeit small, project using
 [`asyncio`](https://docs.python.org/3/library/asyncio.html),
