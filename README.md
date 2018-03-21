@@ -22,6 +22,7 @@ service.
          1. [Manually checking](./docs/waiting.md#manually-checking )
          1. [`ensure_up.py`](./docs/waiting.md#ensure_uppy)
    1. [Cleaning up](#cleaning-up)
+      1. [Delete endpoint](#delete-endpoint)
 1. [Scaling](./docs/scaling.md#scaling)
 
 ## Requirements
@@ -36,10 +37,10 @@ See [`requirements.md`](./docs/requirements.md)
    if the message already exists.
 2. `/messages/<hash>` responds to GET requests and returns the message that
    hashes to `hash`. Nonexistent messages receive a HTTP 404 error.
-3. `/messages/<hash>` also responds to DELETE requests, so that messages can be
-   cleaned up from the server. Since the service uses Docker volumes to persist
-   messages across service restarts, this provides a convenient way to reset
-   the container state.
+3. `/messages/<hash>` is an [optional endpoint](#delete-endpoint) also responds
+   to DELETE requests, so that messages can be cleaned up from the server.
+   Since the service uses Docker volumes to persist messages across service
+   restarts, this provides a convenient way to reset the container state.
 
 ## Building and running the image
 
