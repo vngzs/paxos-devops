@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 
-import asyncio
 import hashlib
 import ssl
 import sys
-import os
-import signal
 from pathlib import Path
 import logging
 from json import dumps
-from concurrent.futures import ProcessPoolExecutor
 
 from sanic import Sanic
 from sanic.response import json
