@@ -77,6 +77,10 @@ If we offload our persistent storage to something besides Docker data volumes,
 then we can scale our application servers separately from our data store. This
 solves the concurrency issue mentioned in the previous section.
 
+In this case, assume we choose [Cassandra](http://cassandra.apache.org/) for
+our persistent storage. We change our applications to write and read to our
+Cassandra cluster instead of a Docker volume.
+
 For example, in this case we could store the primary key as `text` data type,
 which would be the sha256 checksum of our message. The message could also fit
 nicely into a `text` data type, given our current use case. If we need to store
