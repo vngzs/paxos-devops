@@ -63,6 +63,14 @@ the docker container host.
 But _ultimately this is kind of a bad idea_, since we risk concurrency issues
 if two containers try to write to the same file.
 
+### Load balancing
+
+If we want more than one application container, we need to load balance the
+applications somehow. A neat example of this would be
+[haproxy](https://github.com/docker/dockercloud-haproxy/tree/master)
+in front of our Docker application servers, but any load balancer that is
+production-grade and can send traffic to our containers would do.
+
 ### Offloading persistent storage
 
 If we offload our persistent storage to something besides Docker data volumes,
