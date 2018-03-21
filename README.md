@@ -71,7 +71,8 @@ $ docker ps --format '{{.ID}}' --filter name=sha256py_web --no-trunc
 def047ad1aec5ef91f8c788f5e18a49eeaf5c3b281d778f591751b614d7eeb0f
 ```
 
-To navigate to that directory:
+To navigate to that directory (while the container is running via
+`docker-compose`):
 
 ```console
 # cd "/var/lib/docker/containers/$(docker ps --format '{{.ID}}' --filter name=sha256py_web --no-trunc)" && ls
