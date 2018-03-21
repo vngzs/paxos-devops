@@ -71,14 +71,16 @@ def main():
     avg_dict = manager.dict()
     count_dict = manager.dict()
     jobs = []
+    processes = []
     messages_by_thread = [None] * args.threads
     for i in range(args.threads):
         messages_by_thread[i] = get_n_messages_length_k(args.count, args.length)
-    start = time.perf_counter()
     for i in range(args.threads):
         p = mp.Process(target=start_asyncio_processing, args=(messages_by_thread[i], i, avg_dict, count_dict))
         jobs.append(p)
-        p.start()
+        processes.append(p)
+    start = time.perf_counter()
+    [p.start() for p in processes]
     for proc in jobs:
         proc.join()
     end = time.perf_counter()
