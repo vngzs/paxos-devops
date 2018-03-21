@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 
 import hashlib
+from json import dumps
+import logging
+from pathlib import Path
 import ssl
 import sys
-from pathlib import Path
-import logging
-from json import dumps
-
-from sanic import Sanic
-from sanic.response import json
-from sanic.response import file
 
 import aiofiles
 from aiofiles import os as async_os
+from sanic.response import file
+from sanic.response import json
+from sanic import Sanic
+
 
 app = Sanic('sha256py')
 
@@ -25,6 +25,7 @@ else:
 logger = logging.getLogger('root')
 error_logger = logging.getLogger('sanic.error')
 access_logger = logging.getLogger('sanic.access')
+
 
 def sha256_encode(message):
     b = message
@@ -113,7 +114,8 @@ def init(sanic, loop):
 async def send_message(request):
     logger.info('sending message: %s', str(request.json['message']))
     result = await hashmap.add(request.json['message'])
-    logger.info('%s %s %s', str(request.json['message']), ' -> ', str(result['digest']))
+    logger.info('%s %s %s', str(
+        request.json['message']), ' -> ', str(result['digest']))
     if result['updated']:
         logger.info('returning 201: %s', str(result['digest']))
         return json({"digest": result['digest']}, status=201)
@@ -149,6 +151,7 @@ async def retrieve_message(request, digest):
 
 def main():
     app.run(host="0.0.0.0", port=5000, ssl=context, workers=20)
+
 
 if __name__ == "__main__":
     main()
