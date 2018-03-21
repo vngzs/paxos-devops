@@ -54,3 +54,11 @@ as long as the host has capacity to handle this. Scaling this way will not help
 us if we are limited by I/O on our data volume, because that is a hard limit on
 the docker container host.
 
+But _ultimately this is kind of a bad idea_, since we risk concurrency issues
+if two containers try to write to the same file.
+
+### Offloading persistent storage
+
+If we offload our persistent storage to something besides Docker data volumes,
+then we can scale our application servers separately from our data store. This
+solves the concurrency issue mentioned in the previous section.
