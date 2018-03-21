@@ -22,7 +22,7 @@ service.
 
 ## Requirements
 
-See [`requirements.md`](./docs/requirements.md)
+See [`requirements.md`](./docs/requirements.md).
 
 ## ReST API
 
