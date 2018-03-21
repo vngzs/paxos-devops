@@ -41,6 +41,13 @@ web_1  | [2018-03-20 03:58:13 +0000] - (sanic.access)[INFO][1:7]: GET https://lo
 web_1  | [2018-03-20 03:58:13 +0000] - (sanic.access)[INFO][1:7]: DELETE https://localhost:5000/messages/a85e58f3658f380fa327f44905ee76eaa9db41ab9ae7546bced99a1a4cdd87ec  200 86
 ```
 
+This still is not terrible - a recent
+[scaling blog post](https://getstream.io/blog/stream-and-go-news-feeds-for-over-300-million-end-users/)
+wrote about building an API in Go that services ~20k requests per minute,
+albeit with a much more complex service. Based on my benchmarks, we should be
+able to handle ~90k requests per minute on my laptop, which is not bad for
+a short Python script.
+
 #### Limitations
 
 Basically, we are limited by the throughput and performance of our single
