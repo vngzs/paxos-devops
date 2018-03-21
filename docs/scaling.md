@@ -75,7 +75,8 @@ production-grade and can send traffic to our containers would do.
 
 If we offload our persistent storage to something besides Docker data volumes,
 then we can scale our application servers separately from our data store. This
-solves the concurrency issue mentioned in the previous section.
+solves the concurrency issue mentioned in
+[More than one container?](#more-than-one-container).
 
 In this case, assume we choose [Cassandra](http://cassandra.apache.org/) for
 our persistent storage. We change our applications to write and read to our
