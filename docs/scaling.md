@@ -79,7 +79,10 @@ solves the concurrency issue mentioned in the previous section.
 
 In this case, assume we choose [Cassandra](http://cassandra.apache.org/) for
 our persistent storage. We change our applications to write and read to our
-Cassandra cluster instead of a Docker volume.
+Cassandra cluster instead of a Docker volume. Since Cassandra
+[writes are atomic at the row-level](https://docs.datastax.com/en/cassandra/3.0/cassandra/dml/dmlTransactionsDiffer.html),
+this automatically solves the concurrency problems related to sharing a docker
+volume across hosts.
 
 For example, in this case we could store the primary key as `text` data type,
 which would be the sha256 checksum of our message. The message could also fit
@@ -92,3 +95,14 @@ With the sha256 checksum as our primary key, we should achieve reasonable
 This gives us high availability (by running multiple application servers
 behind a load balancer) and scalability in our persistent storage (we can add
 more Cassandra nodes to handle a higher workload).
+
+#### Performance bounds
+
+Since we are offloading our I/O to Cassandra and mostly serving and storing
+messages from a ReST API, chances are our system will be I/O bound. However,
+if we find the sha256 calculation is meaningfully limiting (this will be
+obvious because we will either be storing large messages or the CPU usage on
+our Python application servers will be high), we can always rewrite our app
+servers in a language like [Go](https://golang.org/) to make this more
+efficient.
+

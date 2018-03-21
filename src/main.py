@@ -45,6 +45,11 @@ def mkdir_to_path(directory, path):
     path.touch()
 
 
+def unlink(path):
+    logger.info("creating path: %s", str(path))
+    path.touch()
+
+
 class DirHashMap(object):
     def __init__(self, loop=None, root='/srv'):
         self.loop = loop
@@ -57,10 +62,9 @@ class DirHashMap(object):
             item: will be sha256 encoded and stored on the filesystem at
                   root / sha256(item)[:2] / sha256(item).
         """
-        executor = ProcessPoolExecutor(max_workers=3)
         result = await self.loop.run_in_executor(None, sha256_encode, item)
         logger.info('adding %s -> %s', str(result), str(item))
-        contains = await self.__contains__(result)
+        contains = await self.contains(result)
         if not contains:
             directory = self.root / Path(result[:2])
             path = directory / Path(result)
@@ -71,7 +75,7 @@ class DirHashMap(object):
         else:
             return {"digest": result, "updated": False}
 
-    async def __getitem__(self, key):
+    async def getitem(self, key):
         if len(key) != 64:
             raise KeyError(key)
         path = self.root / Path(key[:2]) / Path(key)
@@ -79,7 +83,7 @@ class DirHashMap(object):
             raise ArgumentError('bad path')
         return await file(path)
 
-    async def __contains__(self, key):
+    async def contains(self, key):
         if len(key) != 64:
             return False
         path = self.root / Path(key[:2]) / Path(key)
@@ -87,7 +91,7 @@ class DirHashMap(object):
             raise ArgumentError('bad path')
         return await self.loop.run_in_executor(None, path.is_file)
 
-    def __delitem__(self, key):
+    async def delitem(self, key):
         if len(key) != 64:
             raise KeyError(key)
         path = self.root / Path(key[:2]) / Path(key)
@@ -97,7 +101,7 @@ class DirHashMap(object):
             raise KeyError(key)
         if not path.is_file():
             raise KeyError(key)
-        path.unlink()
+        return await self.loop.run_in_executor(None, path.unlink)
 
 
 hashmap = None
@@ -129,22 +133,22 @@ async def delete(request, digest):
     Convenience function for when this is run with persistent docker volumes,
     such that test messages may be automatically deleted.
     """
-    contains = await hashmap.__contains__(digest)
+    contains = await hashmap.contains(digest)
     if not contains:
         return json({"err_message": "Message not found"}, status=404)
     else:
-        del hashmap[digest]
+        await hashmap.delitem(digest)
         return json({"message_deleted": digest})
 
 
 @app.route("/messages/<digest>", methods=["GET"])
 async def retrieve_message(request, digest):
-    contains = await hashmap.__contains__(digest)
+    contains = await hashmap.contains(digest)
     if not contains:
         error_logger.error('digest %s not found', str(digest))
         return json({"err_message": "Message not found"}, status=404)
     else:
-        return await hashmap[digest]
+        return await hashmap.getitem(digest)
 
 
 def main():
