@@ -89,3 +89,6 @@ messages.
 
 With the sha256 checksum as our primary key, we should achieve reasonable
 [consistent hashing](https://docs.datastax.com/en/cassandra/2.1/cassandra/architecture/architectureDataDistributeHashing_c.html).
+This gives us high availability (by running multiple application servers
+behind a load balancer) and scalability in our persistent storage (we can add
+more Cassandra nodes to handle a higher workload).
