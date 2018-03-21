@@ -41,7 +41,13 @@ web_1  | [2018-03-20 03:58:13 +0000] - (sanic.access)[INFO][1:7]: GET https://lo
 web_1  | [2018-03-20 03:58:13 +0000] - (sanic.access)[INFO][1:7]: DELETE https://localhost:5000/messages/a85e58f3658f380fa327f44905ee76eaa9db41ab9ae7546bced99a1a4cdd87ec  200 86
 ```
 
-### More than one container
+#### Limitations
+
+Basically, we are limited by the throughput and performance of our single
+Docker container and single Python application. As soon as this becomes slow,
+it is time to start re-architecturing our application.
+
+### More than one container?
 
 If we want to scale this to more containers on the same host, we can attach the
 data volume to more than one docker container and run multiple webservers
@@ -62,3 +68,12 @@ if two containers try to write to the same file.
 If we offload our persistent storage to something besides Docker data volumes,
 then we can scale our application servers separately from our data store. This
 solves the concurrency issue mentioned in the previous section.
+
+For example, in this case we could store the primary key as `text` data type,
+which would be the sha256 checksum of our message. The message could also fit
+nicely into a `text` data type, given our current use case. If we need to store
+messages longer than the 64 KB limit, we could use the `blob` data type for
+messages.
+
+With the sha256 checksum as our primary key, we should achieve reasonable
+[consistent hashing](https://docs.datastax.com/en/cassandra/2.1/cassandra/architecture/architectureDataDistributeHashing_c.html).
