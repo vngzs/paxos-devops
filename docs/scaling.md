@@ -24,7 +24,8 @@ as long as the host has capacity to handle this. Scaling this way will not help
 us if we are limited by I/O on our data volume, because that is a hard limit on
 the docker container host.
 
-We can use the [`aiohttp-test.py`](../scripts/aiohttp-test.py) script to
+We can use the [`aiohttp-test.py`](../scripts/aiohttp-test.py) or its wrapper,
+[`run-aiohttp-test.sh`](../scripts/run-aiohttp-test.sh) script to
 benchmark our application. For example, to generate 500 * 6 random strings of
 length 20 and run a POST/GET/DELETE sequence in each of 6 threads, we do:
 
