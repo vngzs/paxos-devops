@@ -139,3 +139,6 @@ our Python application servers will be high), we can always rewrite our app
 servers in a language like [Go](https://golang.org/) to make this more
 efficient.
 
+The same holds true for an S3-based implementation. An added benefit there
+would be, again, the streaming capability: we can lower RAM usage in our app
+servers by avoiding keeping entire response objects in memory.
