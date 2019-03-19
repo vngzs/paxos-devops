@@ -173,3 +173,7 @@ so I might have gotten some of the details wrong.
 ## Scaling
 
 See [`scaling.md`](./docs/scaling.md).
+
+## Changelog
+
+- 2019-03-19 added ZenHub issue tracking
